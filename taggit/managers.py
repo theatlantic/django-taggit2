@@ -107,6 +107,12 @@ class TaggableManager(RelatedField):
     def related_query_name(self):
         return self.model._meta.module_name
 
+    def m2m_target_field_name(self):
+        return self.model._meta.pk.name
+
+    def m2m_reverse_target_field_name(self):
+        return self.rel.to._meta.pk.name
+
     def m2m_reverse_name(self):
         return self.through._meta.get_field_by_name("tag")[0].column
 
