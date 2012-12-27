@@ -106,6 +106,7 @@
                     tags.push.apply(tags, new_tags.filter(function(i){ 
                         return set[i]  === undefined 
                     }));
+                    console.log('New tag set:' + tags.join(','));
                     $input.val(tags.join(','));
                 }
                 
