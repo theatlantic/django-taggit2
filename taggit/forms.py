@@ -1,11 +1,18 @@
 import os
 from django import forms
+from django.forms.util import flatatt
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
 from taggit.utils import parse_tags, edit_string_for_tags, clean_tag_string
 
 class TagWidget(forms.TextInput):
 	
+	tag_suggest = None
+	def __init__(self, generate_tags=None):
+		super(TagWidget, self).__init__()
+		self.generate_tags = generate_tags
+
 	def get_media(self):
 		"""
 		A method used to dynamically generate the media property,
@@ -14,25 +21,16 @@ class TagWidget(forms.TextInput):
 		"""
 		from django.forms.widgets import Media as _Media
 		from django.core.urlresolvers import NoReverseMatch, reverse
+		media = super(TagWidget, self).media
 		try:
 			media_url = reverse('taggit-static', kwargs={'path': ''})
 		except NoReverseMatch:
-			media_url = None
-		if media_url is None:
-			class_props = {}
+			# Nothing to add
+			pass
 		else:
-			class_props = {
-				'css': {
-					'all': (
-						os.path.join(media_url, 'css', 'autocomplete.css'),
-					)
-				},
-				'js': (
-					os.path.join(media_url, 'js', 'taggit.js'),
-				)
-			}
-		media_cls = type('Media', (_Media,), class_props)
-		return _Media(media_cls)
+			media.add_js([os.path.join(media_url, 'js', 'taggit.js')])
+			media.add_css({'all': (os.path.join(media_url, 'css', 'autocomplete.css'),)})
+		return media
 	
 	media = property(get_media)
 	
@@ -41,8 +39,19 @@ class TagWidget(forms.TextInput):
 			value = edit_string_for_tags([o.tag for o in value.select_related("tag")])
 		if attrs is None:
 			attrs = {}
+
 		attrs.update({'class': 'taggit-tags'})
-		return super(TagWidget, self).render(name, value, attrs)
+		if self.generate_tags is not None:
+			attrs.update({'data-tag-content-field': self.generate_tags});
+
+		rendered = super(TagWidget, self).render(name, value, attrs)
+		if self.generate_tags is not None:
+			attrs = flatatt({'data-field': name,
+							 'class':'taggit-tag-suggest',
+							 'type': 'button'})
+			rendered += mark_safe(u"<button%s>Generate</button>" % attrs)
+
+		return rendered
 
 	def _has_changed(self, initial, data):
 		"""

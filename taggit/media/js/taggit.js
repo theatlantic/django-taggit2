@@ -3,7 +3,7 @@
 	var taggitPrefix = '/';
 	
 	var scripts = document.getElementsByTagName('SCRIPT');
-	for (var i = 0; i < scripts.length; i++) {
+	for (var i = 0,l=scripts.length; i < l; i++) {
 		var src = scripts[i].getAttribute('src');
 		if (typeof src == 'string' && src.length) {
 			var matches = src.match(/^(.+\/)static\/js\/taggit\.js/);
@@ -21,12 +21,11 @@
 		return split(term).pop();
 	}
 	
-	$(document).ready(function() {
-		$.getJSON(taggitPrefix + 'ajax', {}, function(data) {
-			var availableTags = [];
-			for(var i=0; i < data.length; i++){
-				availableTags.push(data[i].fields.name);
-			}
+    function setup_autocomplete() {
+        $.getJSON(taggitPrefix + 'ajax', {}, function(data) {
+			var availableTags = data.map(function(i) {
+                return i.fields.name;
+            });
 			if ($.ui && $.ui.autocomplete && $.ui.autocomplete.filter) {
 				$('input.taggit-tags')
 				// don't navigate away from the field on tab when selecting an item
@@ -37,7 +36,7 @@
 					}
 				})
 				.autocomplete({
-					minLength: 0,
+					minLength: 2,
 					source: function(request, response) {
 						// delegate back to autocomplete, but extract the last term
 						response($.ui.autocomplete.filter(
@@ -50,9 +49,7 @@
 					select: function(event, ui) {
 						var terms = split(this.value);
 						// remove the current input
-						terms.pop();
-						// add the selected item
-						terms.push(ui.item.value);
+                        terms[terms.length-1] = ui.item.value;
 						// add placeholder to get the comma-and-space at the end
 						terms.push("");
 						this.value = terms.join(", ");
@@ -66,5 +63,60 @@
 			}
 
 		});
-	});
+    }
+
+    function get_contents_by_name(context, field_name) {
+        var $form = $(context).parents('form').slice(0,1);
+        var $field = $form.find('[name='+field_name +']');
+
+        // Explicit check to CKEDITOR
+        if($field[0].tagName === 'TEXTAREA' && 
+               window.CKEDITOR !== undefined && 
+               CKEDITOR.instances[$field.attr('id')] !== undefined) {
+            return CKEDITOR.instances[$field.attr('id')].getData();
+        }
+        return $field.val();
+    }
+
+    function setup_generate_tags() {
+        var selector = 'button.taggit-tag-suggest';
+        $(selector).live('click', function() {
+            // Get content field to use and url to query
+            var $input = $(this).prev('input'),
+                query_url = taggitPrefix + 'generate-tags',
+                content_field = $input.attr('data-tag-content-field'),
+                self = this;
+                
+            var raw_contents = content_field.split(',').map(function(cf) {
+                return get_contents_by_name(self, cf); 
+            }).join('\n');
+
+            $.ajax({
+                url: query_url,
+                type: 'POST',
+                dataType: 'jsonp',
+                data: {'contents': raw_contents},
+                success: function(new_tags) {
+                    // Make sure to dedup the provided tags against the
+                    // already given tags.
+                    var tags = split( $input.val() );
+                    for(var set = {}, i = 0; i < tags.length; i++) {
+                        set[tags[i]] = true;
+                    }
+                    tags.push.apply(tags, new_tags.filter(function(i){ 
+                        return set[i]  === undefined 
+                    }));
+                    $input.val(tags.join(','));
+                }
+                
+            });
+
+        });
+    }
+
+	$(document).ready(function() {
+        //setup_autocomplete();
+        setup_generate_tags();
+    });
+
 })((typeof window.django != 'undefined') ? django.jQuery : jQuery);

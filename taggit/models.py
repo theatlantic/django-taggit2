@@ -18,39 +18,37 @@ class TagBase(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.slug:
-            self.slug = self.slugify(self.name)
-            if django.VERSION >= (1, 2):
-                from django.db import router
-                using = kwargs.get("using") or router.db_for_write(
-                    type(self), instance=self)
-                # Make sure we write to the same db for all attempted writes,
-                # with a multi-master setup, theoretically we could try to
-                # write and rollback on different DBs
-                kwargs["using"] = using
-                trans_kwargs = {"using": using}
-            else:
-                trans_kwargs = {}
-            i = 0
-            while True:
-                i += 1
-                try:
-                    sid = transaction.savepoint(**trans_kwargs)
-                    res = super(TagBase, self).save(*args, **kwargs)
-                    transaction.savepoint_commit(sid, **trans_kwargs)
-                    return res
-                except IntegrityError:
-                    transaction.savepoint_rollback(sid, **trans_kwargs)
-                    self.slug = self.slugify(self.name, i)
-        else:
+        if self.pk or self.slug:
             return super(TagBase, self).save(*args, **kwargs)
+        self.slug = self.slugify(self.name)
+        if django.VERSION >= (1, 2):
+            from django.db import router
+            using = kwargs.get("using") or router.db_for_write(
+                type(self), instance=self)
+            # Make sure we write to the same db for all attempted writes,
+            # with a multi-master setup, theoretically we could try to
+            # write and rollback on different DBs
+            kwargs["using"] = using
+            trans_kwargs = {"using": using}
+        else:
+            trans_kwargs = {}
+        i = 0
+        while True:
+            i += 1
+            try:
+                sid = transaction.savepoint(**trans_kwargs)
+                res = super(TagBase, self).save(*args, **kwargs)
+                transaction.savepoint_commit(sid, **trans_kwargs)
+                return res
+            except IntegrityError:
+                transaction.savepoint_rollback(sid, **trans_kwargs)
+                self.slug = self.slugify(self.name, i)
 
     def slugify(self, tag, i=None):
         slug = default_slugify(tag)
         if i is not None:
             slug += "_%d" % i
         return slug
-
 
 class Tag(TagBase):
     class Meta:
