@@ -12,6 +12,10 @@ class TagWidget(forms.TextInput):
 	def __init__(self, generate_tags=None):
 		super(TagWidget, self).__init__()
 		self.generate_tags = generate_tags
+        if generate_tags is not None:
+            from taggit.settings import TAGGIT_TAG_GENERATE_FUNC
+            if TAGGIT_TAG_GENERATE_FUNC is None:
+                raise LookupError('TAGGIT_TAG_GENERATE_FUNC is not defined!')
 
 	def get_media(self):
 		"""
