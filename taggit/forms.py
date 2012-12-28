@@ -1,4 +1,5 @@
 import os
+from cStringIO import StringIO as SIO
 from django import forms
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
@@ -6,7 +7,7 @@ from django.utils.translation import ugettext as _
 
 from taggit.utils import parse_tags, edit_string_for_tags, clean_tag_string
 
-class TagWidget(forms.TextInput):
+class TagWidget(forms.Textarea):
 	
 	tag_suggest = None
 	def __init__(self, generate_tags=None):
@@ -48,6 +49,9 @@ class TagWidget(forms.TextInput):
 		if self.generate_tags is not None:
 			attrs.update({'data-tag-content-field': self.generate_tags});
 
+		if 'rows' not in attrs:
+			attrs['rows'] = 3
+
 		rendered = super(TagWidget, self).render(name, value, attrs)
 		if self.generate_tags is not None:
 			attrs = flatatt({'data-field': name,
@@ -87,6 +91,7 @@ class TagField(forms.CharField):
 
 	def clean(self, value):
 		value = super(TagField, self).clean(value)
+		value = ','.join(SIO(value))
 		try:
 			return parse_tags(value)
 		except ValueError:
