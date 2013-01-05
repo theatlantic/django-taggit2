@@ -101,18 +101,25 @@
                 data: {'contents': raw_contents},
                 success: function(new_tags) {
                     // Make sure to dedup the provided tags against the
-                    // already given tags.
+                    // already given tags, normalizing as best we can.
                     var tags = split( $input.val() );
                     for(var set = {}, i = 0; i < tags.length; i++) {
-                        set[tags[i].toLowerCase()] = true;
+                        var tag = tags[i].toLowerCase();
+                        if(!/^".+"$/.test(tag)) {
+                            tag = '"' + tag + '"';
+                        }
+                        console.log("Existing tag: " + tag);
+                        set[tag] = true;
                     }
+
+                    // Filter out tags that already exist
                     tags.push.apply(tags, new_tags.map(function(t) {
                         return '"'+t+'"';
                     }).filter(function(i){ 
                         return set[i.toLowerCase()]  === undefined ;
                     }));
                     console.log('New tag set:' + tags.join(','));
-                    $input.val(tags.join(','));
+                    $input.val(tags.join(', '));
                     $(document.body).css('cursor',prev);
                 },
                 failure: function() {
@@ -125,7 +132,7 @@
     }
 
     $(document).ready(function() {
-        //setup_autocomplete();
+        setup_autocomplete();
         setup_generate_tags();
     });
 
