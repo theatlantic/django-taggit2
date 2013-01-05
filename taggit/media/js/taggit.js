@@ -91,8 +91,7 @@
                 return get_contents_by_name(self, cf); 
             }).join('\n');
             
-            var prev = $(document.body).css('cursor');
-            $(document.body).css('cursor', 'wait');
+            $input.attr('disabled', 'disabled');
 
             $.ajax({
                 url: query_url,
@@ -120,10 +119,10 @@
                     }));
                     console.log('New tag set:' + tags.join(','));
                     $input.val(tags.join(', '));
-                    $(document.body).css('cursor',prev);
+                    $input.removeAttr('disabled'); 
                 },
                 failure: function() {
-                    $(document.body).css('cursor',prev);
+                    $input.removeAttr('disabled'); 
                 }
                 
             });
