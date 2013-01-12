@@ -1,5 +1,9 @@
+from itertools import count
+
 from django.utils.encoding import force_unicode
 from django.utils.functional import wraps
+
+from taggit.models import TagTransform
 
 
 def parse_tags(tagstring):
@@ -132,3 +136,73 @@ def require_instance_manager(func):
             raise TypeError("Can't call %s with a non-instance manager" % func.__name__)
         return func(self, *args, **kwargs)
     return inner
+
+def tags_to_word_idx(tags):
+    word_idxs = {}
+    new_tags = []
+    counter = count()
+    for tag in tags:
+        new_tag = []
+        for word in tag.split():
+            try:
+                word_idx = word_idxs[word]
+            except KeyError:
+                word_idx = word_idxs.setdefault(word, next(counter))
+
+            new_tag.append(word_idx)
+        new_tags.append(new_tag)
+    return word_idxs, new_tags
+
+def word_idx_to_tags(word_idxs, tags):
+    r_word_idx = dict((idx, word) for word, idx in word_idxs.iteritems())
+    new_tags = []
+    for tag in tags:
+        new_tag = []
+        for idx in tag:
+            word = r_word_idx[idx]
+            # Formatting tweak: if it's all lower case, capitalize it.
+            # Otherwise, let it be
+            if word is not None and word.isalpha() and word.islower():
+                word = word.capitalize()
+
+            new_tag.append(word)
+        # words that are set to None indicate we want to delete the entire tag
+
+        if None not in new_tag:
+            new_tags.append(u' '.join(new_tag))
+
+    return new_tags
+
+def filter_tags(original_tags):
+    tag_indexes = dict(zip(map(unicode.lower, original_tags), xrange(len(original_tags))))
+    tags = tag_indexes.keys()
+
+    # Find tags that we intend to completely delete
+    to_delete = set(t.rule for t in TagTransform.objects.filter(type=0, transform=None, rule__in=tags))
+    tags = [t for t in tags if t not in to_delete]
+
+    # Get normal word transforms
+    transforms = TagTransform.objects.filter(type=0, rule__in=tags)
+    transform_map = dict((t.rule, t) for t in transforms)
+    for i, tag in enumerate(tags):
+        if tag in transform_map:
+            tags[i] = transform_map[tag].apply_transform(tag)
+
+    # Break apart tags into their constituent words
+    word_idxs, tags = tags_to_word_idx(tags)
+
+    # Figure out how words are to be transformed and transform them
+    transforms = TagTransform.objects.filter(type=1, rule__in=word_idxs.keys())
+    transform_map = dict((t.rule, t) for t in transforms)
+    new_word_idxs = {}
+    for word, idx in word_idxs.iteritems():
+        if word in transform_map:
+            word = transform_map[word].apply_transform(word)
+            word = word or None
+
+        new_word_idxs[word] = idx
+
+    # Rebuild the words with the now modified set
+    tags = word_idx_to_tags(new_word_idxs, tags)
+
+    return tags

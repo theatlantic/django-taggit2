@@ -6,6 +6,7 @@ from django.template.defaultfilters import slugify as default_slugify
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.core.urlresolvers import reverse
 
+import fnmatch
 
 class TagBase(models.Model):
     name = models.CharField(verbose_name=_('Name'), max_length=100)
@@ -160,3 +161,30 @@ class TaggedItem(GenericTaggedItemBase, TaggedItemBase):
     class Meta:
         verbose_name = _("Tagged Item")
         verbose_name_plural = _("Tagged Items")
+
+class TagTransform(models.Model):
+    class Meta:
+        verbose_name = _("Tag Transform")
+        verbose_name_plural = _("Tag Transforms")
+
+    RULE_TYPES = (
+        (0, 'Exact Match'),
+        (1, 'Contains')
+    )
+    
+    type = models.IntegerField(choices=RULE_TYPES, default=0, db_index=True)
+    rule = models.CharField(verbose_name=_("Rule"), unique=True, max_length=100, help_text="Rule to match on Generated Tags")
+    transform = models.CharField(verbose_name="Transform", max_length=100, blank=True, help_text="What the tag is transformed to.  If empty, deletes the tag")
+
+    def save(self, *args, **kwargs):
+        if self.type < 3:
+            self.rule = self.rule.lower()
+        return super(TagTransform, self).save(*args, **kwargs)
+
+    def apply_transform(self, tag):
+        matches = (self.type == 0 and self.rule == tag) or \
+                  (self.type == 1 and fnmatch.fnmatch(tag, self.rule))
+        if not matches:
+            return tag
+
+        return self.transform

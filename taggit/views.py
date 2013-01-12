@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from taggit.models import TaggedItem, Tag
+import utils
 
 def ajax(request):
     ''' get all of the tags available and return as a json array'''
@@ -47,6 +48,7 @@ def generate_tags(request):
 
     # Filter out tags that are in our 'bad' list
     # stub
+    tags = utils.filter_tags(tags)
     data = simplejson.dumps(tags)
     return HttpResponse(u'%s(%s)' % (request.POST['callback'], data),
                         content_type='application/json')

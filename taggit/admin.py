@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from taggit.models import Tag, TaggedItem
+from taggit.models import Tag, TaggedItem, TagTransform
 
 
 class TaggedItemInline(admin.StackedInline):
@@ -14,4 +14,12 @@ class TagAdmin(admin.ModelAdmin):
     ordering = ['name']
     search_fields = ['name']
 
+class TagTransformAdmin(admin.ModelAdmin):
+    model = TagTransform
+    order = ('rule',)
+    search_fields = ('name',)
+    list_per_page = 50
+    list_display = ('type', 'rule', 'transform')
+
 admin.site.register(Tag, TagAdmin)
+admin.site.register(TagTransform, TagTransformAdmin)

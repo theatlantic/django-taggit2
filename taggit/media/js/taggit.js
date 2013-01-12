@@ -85,7 +85,8 @@
             var $input = $(this).prev(),
                 query_url = taggitPrefix + 'generate-tags',
                 content_field = $input.attr('data-tag-content-field'),
-                self = this;
+                self = this,
+                raw_tags = $input.val();
                 
             var raw_contents = content_field.split(',').map(function(cf) {
                 return get_contents_by_name(self, cf); 
@@ -101,7 +102,7 @@
                 success: function(new_tags) {
                     // Make sure to dedup the provided tags against the
                     // already given tags, normalizing as best we can.
-                    var tags = split( $input.val() );
+                    var tags = /^\s*$/.test(raw_tags) ? [] : split(raw_tags);
                     for(var set = {}, i = 0; i < tags.length; i++) {
                         var tag = tags[i].toLowerCase();
                         if(!/^".+"$/.test(tag)) {
