@@ -34,7 +34,6 @@ class TagWidget(forms.TextInput):
             pass
         else:
             media.add_js([os.path.join(media_url, 'js', 'tagit.js'),
-                          os.path.join(media_url, 'js', 'jquery-ui.1.8.20.min.js'),
                           os.path.join(media_url, 'js', 'taggit.js')
             ])
             media.add_css({'all': (
