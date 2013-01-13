@@ -13,55 +13,13 @@
         }
     }
     
-    function split(val) {
-        return val.split(/,\s*/);
-    }
-    
-    function extractLast(term) {
-        return split(term).pop();
-    }
-    
+    var availableTags = [];
     function setup_autocomplete() {
         $.getJSON(taggitPrefix + 'ajax', {}, function(data) {
-            var availableTags = data.map(function(i) {
+            availableTags.push.apply(availableTags, data.map(function(i) {
                 return i.fields.name;
-            });
-            if ($.ui && $.ui.autocomplete && $.ui.autocomplete.filter) {
-                $('.taggit-tags')
-                // don't navigate away from the field on tab when selecting an item
-                .bind("keydown", function(event) {
-                    if (event.keyCode === $.ui.keyCode.TAB &&
-                            $(this).data("autocomplete").menu.active) {
-                        event.preventDefault();
-                    }
-                })
-                .autocomplete({
-                    minLength: 2,
-                    source: function(request, response) {
-                        // delegate back to autocomplete, but extract the last term
-                        response($.ui.autocomplete.filter(
-                            availableTags, extractLast(request.term)));
-                    },
-                    focus: function() {
-                        // prevent value inserted on focus
-                        return false;
-                    },
-                    select: function(event, ui) {
-                        var terms = split(this.value);
-                        // remove the current input
-                        terms[terms.length-1] = ui.item.value;
-                        // add placeholder to get the comma-and-space at the end
-                        terms.push("");
-                        this.value = terms.join(", ");
-                        return false;
-                    }
-                });                
-            } else {
-                $('.taggit-tags').autocomplete({
-                    source: availableTags
-                });
-            }
-
+            }));
+            setup_tagit_widgets();
         });
     }
 
@@ -78,13 +36,35 @@
         return $field.val();
     }
 
-    function setup_generate_tags() {
+    function update_input(a, b) {
+        // tagsChanged api is crappy; it doesn't return a consistent
+        // element
+        var tags = this.tags().map(function(t) {
+            return '"' + t.value + '"';
+        });
+        var id = this.element.attr('data-field-id');
+        // Update the input field
+        $('#'+id).val(tags.join(','));
+    }
+
+    function setup_tagit_widgets() {
+        $('ul.taggit-tags').tagit({
+            tagSource: availableTags,
+            triggerKeys: ['enter', 'comma', 'tab'],
+            editable: true,
+            tagsChanged: update_input
+        });
+        $('input.taggit-tags').hide();
+    }
+
+    function setup_generate_tags()  {
         var selector = 'button.taggit-tag-suggest';
         $(selector).live('click', function() {
             // Get content field to use and url to query
-            var $input = $(this).prev(),
+            var $ul = $(this).prev(),
+                $input = $ul.prev(),
                 query_url = taggitPrefix + 'generate-tags',
-                content_field = $input.attr('data-tag-content-field'),
+                content_field = $ul.attr('data-tag-content-field'),
                 self = this,
                 raw_tags = $input.val();
                 
@@ -92,8 +72,6 @@
                 return get_contents_by_name(self, cf); 
             }).join('\n');
             
-            $input.attr('disabled', 'disabled');
-
             $.ajax({
                 url: query_url,
                 type: 'POST',
@@ -102,25 +80,10 @@
                 success: function(new_tags) {
                     // Make sure to dedup the provided tags against the
                     // already given tags, normalizing as best we can.
-                    var tags = /^\s*$/.test(raw_tags) ? [] : split(raw_tags);
-                    for(var set = {}, i = 0; i < tags.length; i++) {
-                        var tag = tags[i].toLowerCase();
-                        if(!/^".+"$/.test(tag)) {
-                            tag = '"' + tag + '"';
-                        }
-                        console.log("Existing tag: " + tag);
-                        set[tag] = true;
+                    for(var i = 0; i < new_tags.length; i++) {
+                        var t = new_tags[i];
+                        $ul.tagit('add', {label: t, value: t});
                     }
-
-                    // Filter out tags that already exist
-                    tags.push.apply(tags, new_tags.map(function(t) {
-                        return '"'+t+'"';
-                    }).filter(function(i){ 
-                        return set[i.toLowerCase()]  === undefined ;
-                    }));
-                    console.log('New tag set:' + tags.join(','));
-                    $input.val(tags.join(', '));
-                    $input.removeAttr('disabled'); 
                 },
                 failure: function() {
                     $input.removeAttr('disabled'); 
