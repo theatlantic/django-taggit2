@@ -59,8 +59,6 @@ class Tag(TagBase):
     def get_absolute_url(self):
         return reverse('taggit_tag', kwargs={'tag_slug':self.slug})
 
-
-
 class ItemBase(models.Model):
     def __unicode__(self):
         return ugettext("%(object)s tagged with %(tag)s") % {

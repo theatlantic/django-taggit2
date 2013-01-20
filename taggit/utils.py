@@ -173,26 +173,30 @@ def word_idx_to_tags(word_idxs, tags):
 
     return new_tags
 
-def filter_tags(original_tags):
-    tag_indexes = dict(zip(map(unicode.lower, original_tags), xrange(len(original_tags))))
-    tags = tag_indexes.keys()
-
+def delete_tags(tags):
     # Find tags that we intend to completely delete
     to_delete = set(t.rule for t in TagTransform.objects.filter(type=0, transform=None, rule__in=tags))
-    tags = [t for t in tags if t not in to_delete]
+    return [t for t in tags if t not in to_delete]
 
+def substitute_tags(tags):
+    tags = tags[:]
     # Get normal word transforms
-    transforms = TagTransform.objects.filter(type=0, rule__in=tags)
+    transforms = TagTransform.objects.filter(type=0, rule__in=tags).exclude(transform="")
     transform_map = dict((t.rule, t) for t in transforms)
     for i, tag in enumerate(tags):
         if tag in transform_map:
             tags[i] = transform_map[tag].apply_transform(tag)
 
-    # Break apart tags into their constituent words
+    return tags
+
+def substitute_words_in_tags(tags, delete_tags=True):
+   # Break apart tags into their constituent words
     word_idxs, tags = tags_to_word_idx(tags)
 
     # Figure out how words are to be transformed and transform them
     transforms = TagTransform.objects.filter(type=1, rule__in=word_idxs.keys())
+    if not delete_tags:
+        transforms = transforms.exclude(transform="")
     transform_map = dict((t.rule, t) for t in transforms)
     new_word_idxs = {}
     for word, idx in word_idxs.iteritems():
@@ -205,4 +209,18 @@ def filter_tags(original_tags):
     # Rebuild the words with the now modified set
     tags = word_idx_to_tags(new_word_idxs, tags)
 
+    return tags
+
+def transform_tags(original_tags, delete_tags=True):
+    # We want the lowercase version for all matching
+    tags = map(unicode.lower, original_tags)
+
+    if delete_tags:
+        tags = delete_tags(tags)
+
+    # Substitute complete tags
+    tags = substitute_tags(tags)
+    
+    # Substitute sub words
+    tags = substitute_words_in_tags(tags, delete_tags)
     return tags

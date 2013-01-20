@@ -48,7 +48,7 @@ def generate_tags(request):
 
     # Filter out tags that are in our 'bad' list
     # stub
-    tags = utils.filter_tags(tags)
+    tags = utils.transform_tags(tags)
     data = simplejson.dumps(tags)
     return HttpResponse(u'%s(%s)' % (request.POST['callback'], data),
                         content_type='application/json')

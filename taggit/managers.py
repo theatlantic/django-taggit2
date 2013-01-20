@@ -36,12 +36,19 @@ class TaggableRel(ManyToManyRel):
 
 
 class TaggableManager(RelatedField):
-    def __init__(self, verbose_name=_("Tags"),
-        help_text=_("A comma-separated list of tags."), through=None, blank=False):
+    help_text = _("A comma-separated list of tags.")
+    verbose_name = _("Tags")
+    def __init__(self, verbose_name=None,
+                       help_text=None,
+                       through=None,
+                       blank=False,
+                       transform_on_save=False):
+        self.transform_on_save = transform_on_save
         self.through = through or TaggedItem
         self.rel = TaggableRel()
         self.verbose_name = verbose_name
-        self.help_text = help_text
+        if help_text is not None:
+            self.help_text = help_text
         self.blank = blank
         self.editable = True
         self.unique = False
@@ -94,7 +101,8 @@ class TaggableManager(RelatedField):
         defaults = {
             "label": self.verbose_name,
             "help_text": self.help_text,
-            "required": not self.blank
+            "required": not self.blank,
+            "transform_on_save": self.transform_on_save
         }
         defaults.update(kwargs)
         return form_class(**defaults)

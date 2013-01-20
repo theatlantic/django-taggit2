@@ -5,7 +5,7 @@ from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
-from taggit.utils import parse_tags, edit_string_for_tags, clean_tag_string
+from taggit.utils import parse_tags, edit_string_for_tags, clean_tag_string, transform_tags
 
 class TagWidget(forms.TextInput):
     
@@ -100,7 +100,7 @@ class TagWidget(forms.TextInput):
             initial = edit_string_for_tags(initial_vals)
         else:
             try:
-                if len(initial) == 0:
+                if not initial:
                     initial = ""
                 else:
                     initial = edit_string_for_tags(initial)
@@ -112,10 +112,17 @@ class TagWidget(forms.TextInput):
 class TagField(forms.CharField):
     widget = TagWidget
 
+    def __init__(self, *args, **kwargs):
+        self.transform_on_save  = kwargs.pop('transform_on_save', False)
+        super(TagField, self).__init__(*args, **kwargs)
+
     def clean(self, value):
         value = super(TagField, self).clean(value)
         value = ','.join(SIO(value))
         try:
-            return parse_tags(value)
+            tags = parse_tags(value)
+            if self.transform_on_save:
+                tags = transform_tags(tags, delete_tags=False)
+            return tags
         except ValueError:
             raise forms.ValidationError(_("Please provide a comma-separated list of tags."))
