@@ -1,5 +1,4 @@
 import os
-from cStringIO import StringIO as SIO
 from django import forms
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
@@ -118,7 +117,6 @@ class TagField(forms.CharField):
 
     def clean(self, value):
         value = super(TagField, self).clean(value)
-        value = ','.join(SIO(value))
         try:
             tags = parse_tags(value)
             if self.transform_on_save:
