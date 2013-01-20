@@ -7,6 +7,9 @@
  */
 
 (function($){
+    $.fn.extend({
+        propAttr: $.fn.prop || $.fn.attr
+    }); 
 
     $.fn.autoGrowInput = function(o) {
        
@@ -161,8 +164,6 @@
             
             self._splitAt = new RegExp(regexString,"g");
             
-            //alert(self._splitAt);
-
             //add the html input
             this.element.html('<li class="tagit-new"><input class="tagit-input" type="text" /></li>');
 
@@ -198,19 +199,20 @@
             this.options.source = this.options.tagSource;
             this.options.select = function (event, ui) {
                 self.input.data('autoCompleteTag', true);
-            clearTimeout(self.timer);
-            if (self.options.maxTags !== undefined && self.tagsArray.length == self.options.maxTags) {
-                self.input.val("");
-            }
-            else {
-                if (ui.item.label === undefined)
-                    self._addTag(ui.item.value);
-                else
-                    self._addTag(ui.item.label, ui.item.value);
-            }
+                clearTimeout(self.timer);
+                if (self.options.maxTags !== undefined && self.tagsArray.length == self.options.maxTags) {
+                    self.input.val("");
+                }
+                else {
+                    if (ui.item.label === undefined) {
+                        self._addTag(ui.item.value);
+                    } else {
+                        self._addTag(ui.item.label, ui.item.value);
+                    }
+                }
 
-            return false;
-        },
+                return false;
+            },
 
             this.options.focus = function (event, ui) {
                 if (ui.item.label !== undefined && /^key/.test(event.originalEvent.type)) {
@@ -654,8 +656,12 @@
                 return true;
             }
             return false;
-        }
+        },
 
+        updateAutoCompleteTags: function(tags) {
+            alert('updating autocomplete');
+            this.input.autocomplete('option', {source: tags});
+        }
 
     });
 })((typeof window.django != 'undefined') ? django.jQuery : jQuery);

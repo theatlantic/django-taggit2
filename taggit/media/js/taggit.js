@@ -19,7 +19,7 @@
             availableTags.push.apply(availableTags, data.map(function(i) {
                 return i.fields.name;
             }));
-            setup_tagit_widgets();
+            $('ul.taggit-tags').tagit('updateAutoCompleteTags', availableTags);
         });
     }
 
@@ -96,6 +96,7 @@
 
     $(document).ready(function() {
         setup_autocomplete();
+        setup_tagit_widgets();
         setup_generate_tags();
     });
 
