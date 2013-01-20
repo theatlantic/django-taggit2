@@ -659,7 +659,6 @@
         },
 
         updateAutoCompleteTags: function(tags) {
-            alert('updating autocomplete');
             this.input.autocomplete('option', {source: tags});
         }
 
