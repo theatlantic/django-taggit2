@@ -173,7 +173,7 @@ def word_idx_to_tags(word_idxs, tags):
 
     return new_tags
 
-def delete_tags(tags):
+def apply_delete_tags(tags):
     # Find tags that we intend to completely delete
     to_delete = set(t.rule for t in TagTransform.objects.filter(type=0, transform=None, rule__in=tags))
     return [t for t in tags if t not in to_delete]
@@ -216,7 +216,7 @@ def transform_tags(original_tags, delete_tags=True):
     tags = map(unicode.lower, original_tags)
 
     if delete_tags:
-        tags = delete_tags(tags)
+        tags = apply_delete_tags(tags)
 
     # Substitute complete tags
     tags = substitute_tags(tags)
