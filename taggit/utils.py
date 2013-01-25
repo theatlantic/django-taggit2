@@ -175,7 +175,7 @@ def word_idx_to_tags(word_idxs, tags):
 
 def apply_delete_tags(tags):
     # Find tags that we intend to completely delete
-    to_delete = set(t.rule for t in TagTransform.objects.filter(type=0, transform=None, rule__in=tags))
+    to_delete = set(t.rule for t in TagTransform.objects.filter(type=0, transform='', rule__in=tags))
     return [t for t in tags if t not in to_delete]
 
 def substitute_tags(tags):
@@ -215,8 +215,10 @@ def transform_tags(original_tags, delete_tags=True):
     # We want the lowercase version for all matching
     tags = map(unicode.lower, original_tags)
 
+    print tags
     if delete_tags:
         tags = apply_delete_tags(tags)
+    print tags
 
     # Substitute complete tags
     tags = substitute_tags(tags)
