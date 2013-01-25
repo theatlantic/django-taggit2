@@ -215,10 +215,8 @@ def transform_tags(original_tags, delete_tags=True):
     # We want the lowercase version for all matching
     tags = map(unicode.lower, original_tags)
 
-    print tags
     if delete_tags:
         tags = apply_delete_tags(tags)
-    print tags
 
     # Substitute complete tags
     tags = substitute_tags(tags)
