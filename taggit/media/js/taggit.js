@@ -70,7 +70,7 @@
                 
             var raw_contents = content_field.split(',').map(function(cf) {
                 return get_contents_by_name(self, cf); 
-            }).join('\n');
+            }).join('.\n');
             
             $.ajax({
                 url: query_url,
