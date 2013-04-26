@@ -17,7 +17,7 @@ class TagAdmin(admin.ModelAdmin):
 class TagTransformAdmin(admin.ModelAdmin):
     model = TagTransform
     order = ('rule',)
-    search_fields = ('name',)
+    search_fields = ('rule', 'transform',)
     list_per_page = 50
     list_display = ('type', 'rule', 'transform')
 
