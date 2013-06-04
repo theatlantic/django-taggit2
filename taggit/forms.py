@@ -45,10 +45,9 @@ class TagWidget(forms.TextInput):
     def render_values(self, tags, attrs):
         builder = []
         builder.append(u'<ul%s>' % flatatt(attrs))
-        for t in tags:
-            t_name = t.tag.name
-            t_attr = {'tagValue':t_name, 'value': t_name}
-            builder.append(u'<li%s>%s</li>' %(flatatt(t_attr),t_name))
+        for tag_name in tags:
+            tag_attr = {'tagValue': tag_name, 'value': tag_name}
+            builder.append(u'<li%s>%s</li>' % (flatatt(tag_attr), tag_name))
         builder.append(u'</ul>')
         return ''.join(builder)
     
@@ -56,7 +55,7 @@ class TagWidget(forms.TextInput):
         # Get the initial rendered box
         raw_value = value
         if value is not None and not isinstance(value, basestring):
-            value = edit_string_for_tags([o.tag for o in value.select_related("tag")])
+            value = edit_string_for_tags(value)
         return super(TagWidget, self).render(name, value, attrs)
 
     def render(self, name, value, attrs=None):
@@ -108,6 +107,7 @@ class TagWidget(forms.TextInput):
         data = clean_tag_string(data)
         return super(TagWidget, self)._has_changed(initial, data)
 
+
 class TagField(forms.CharField):
     widget = TagWidget
 
@@ -124,3 +124,15 @@ class TagField(forms.CharField):
             return tags
         except ValueError:
             raise forms.ValidationError(_("Please provide a comma-separated list of tags."))
+
+    def prepare_value(self, value):
+
+        if isinstance(value,  basestring):
+            try:
+                value = parse_tags(value)
+            except ValueError:
+                raise forms.ValidationError(_("Please provide a comma-separated list of tags."))
+        else:
+            value = [unicode(item.tag) for item in value]
+
+        return super(TagField, self).prepare_value(value)
