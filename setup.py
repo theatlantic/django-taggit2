@@ -1,8 +1,6 @@
 import os
 from setuptools import setup, find_packages
 
-from taggit import VERSION
-
 
 f = open(os.path.join(os.path.dirname(__file__), 'README.txt'))
 readme = f.read()
@@ -10,7 +8,7 @@ f.close()
 
 setup(
     name='django-taggit',
-    version=".".join(map(str, VERSION)),
+    version=__import__('taggit').__version__,
     description='django-taggit is a reusable Django application for simple tagging.',
     long_description=readme,
     author='Alex Gaynor',
