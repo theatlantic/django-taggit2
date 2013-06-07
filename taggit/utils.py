@@ -1,5 +1,6 @@
 from itertools import count
 
+from django.db.models import Q
 from django.utils.encoding import force_unicode
 from django.utils.functional import wraps
 
@@ -139,19 +140,14 @@ def require_instance_manager(func):
 
 def tags_to_word_idx(tags):
     word_idxs = {}
-    new_tags = []
-    counter = count()
-    for tag in tags:
-        new_tag = []
+    for i, tag in enumerate(tags):
         for word in tag.split():
             try:
-                word_idx = word_idxs[word]
+                word_idxs[word].append(i)
             except KeyError:
-                word_idx = word_idxs.setdefault(word, next(counter))
+                word_idx = word_idxs[word] = [i]
 
-            new_tag.append(word_idx)
-        new_tags.append(new_tag)
-    return word_idxs, new_tags
+    return word_idxs
 
 def word_idx_to_tags(word_idxs, tags):
     r_word_idx = dict((idx, word) for word, idx in word_idxs.iteritems())
@@ -189,27 +185,49 @@ def substitute_tags(tags):
 
     return tags
 
+def capitalize_tag(tag):
+    return u' '.join(word.capitalize() for word in tag.split())
+
 def substitute_words_in_tags(tags, delete_tags=True):
-   # Break apart tags into their constituent words
-    word_idxs, tags = tags_to_word_idx(tags)
+    # Break apart tags into their constituent words
+    word_idxs = tags_to_word_idx(tags)
 
     # Figure out how words are to be transformed and transform them
-    transforms = TagTransform.objects.filter(type=1, rule__in=word_idxs.keys())
+    q = reduce(lambda x, y: x | y, (Q(rule__icontains=word) for word in word_idxs))
+    q = Q(type=1) & q
+    transforms = TagTransform.objects.filter(q)
     if not delete_tags:
         transforms = transforms.exclude(transform="")
-    transform_map = dict((t.rule, t) for t in transforms)
-    new_word_idxs = {}
-    for word, idx in word_idxs.iteritems():
-        if word in transform_map:
-            word = transform_map[word].apply_transform(word)
-            word = word or None
 
-        new_word_idxs[word] = idx
+    # Loop over each transform, attempting to figure out if a rule applies
+    # If two different rules would apply to the same transform, we don't
+    # know how to intelligently handle that, so don't apply _any_ transform
+    new_tags = tags[:]
+    seen = set()
+    for transform in transforms:
+        cur_seen = set() 
+        for word in transform.rule.split():
+            idxs = word_idxs.get(word, ())
+            for idx in idxs:
+                # Have we already transformed this?
+                if idx in seen and not cur_seen:
+                    # Yep, mulligan on the transform
+                    new_tags[idx] = tags[idx]
 
-    # Rebuild the words with the now modified set
-    tags = word_idx_to_tags(new_word_idxs, tags)
+                # Have we transformed it already this round?
+                if idx in cur_seen:
+                    continue
 
-    return tags
+                old_tag = tags[idx]
+                new_tag = transform.apply_transform(old_tag)
+                if old_tag != new_tag: 
+                    # Transform was applied!
+                    cur_seen.add(idx)
+                    new_tags[idx] = new_tag
+
+        seen |= cur_seen
+
+    return new_tags
 
 def transform_tags(original_tags, delete_tags=True):
     # We want the lowercase version for all matching
@@ -220,7 +238,8 @@ def transform_tags(original_tags, delete_tags=True):
 
     # Substitute complete tags
     tags = substitute_tags(tags)
-    
+
     # Substitute sub words
     tags = substitute_words_in_tags(tags, delete_tags)
-    return tags
+    cap_tags = sorted(set(capitalize_tag(t) for t in tags))
+    return list(cap_tags)
