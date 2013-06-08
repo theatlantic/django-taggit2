@@ -181,8 +181,13 @@ class TagTransform(models.Model):
 
     def apply_transform(self, tag):
         matches = (self.type == 0 and self.rule == tag) or \
-                  (self.type == 1 and fnmatch.fnmatch(tag, self.rule))
+                  (self.type == 1 and fnmatch.fnmatch(tag, '*%s*' % self.rule))
+
         if not matches:
             return tag
 
         return self.transform
+
+    def __unicode__(self):
+        name = "Exact" if self.type == 0 else "Contains"
+        return '%sTransform("%s" -> "%s")' % (name, self.rule, self.transform)
