@@ -1,3 +1,5 @@
+import re
+
 import django
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.generic import GenericForeignKey
@@ -6,7 +8,6 @@ from django.template.defaultfilters import slugify as default_slugify
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.core.urlresolvers import reverse
 
-import fnmatch
 
 class TagBase(models.Model):
     name = models.CharField(verbose_name=_('Name'), max_length=100)
@@ -161,6 +162,8 @@ class TaggedItem(GenericTaggedItemBase, TaggedItemBase):
         verbose_name_plural = _("Tagged Items")
 
 class TagTransform(models.Model):
+    # TODO: Clean up the 'type' madness with a Transform class
+
     class Meta:
         verbose_name = _("Tag Transform")
         verbose_name_plural = _("Tag Transforms")
@@ -179,11 +182,16 @@ class TagTransform(models.Model):
             self.rule = self.rule.lower()
         return super(TagTransform, self).save(*args, **kwargs)
 
-    def apply_transform(self, tag):
-        matches = (self.type == 0 and self.rule == tag) or \
-                  (self.type == 1 and fnmatch.fnmatch(tag, '*%s*' % self.rule))
+    def matches(self, tag):
+        if self.type == 0: 
+            return self.rule == tag 
 
-        if not matches:
+        if self.type == 1:
+            return re.search(r"(^| )%s( |$)" % self.rule, tag) is not None
+
+
+    def apply_transform(self, tag):
+        if not self.matches(tag):
             return tag
 
         return self.transform
