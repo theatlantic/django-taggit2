@@ -126,7 +126,7 @@ class TagField(forms.CharField):
             raise forms.ValidationError(_("Please provide a comma-separated list of tags."))
 
     def prepare_value(self, value):
-
+        value = value or []
         if isinstance(value,  basestring):
             try:
                 value = parse_tags(value)
