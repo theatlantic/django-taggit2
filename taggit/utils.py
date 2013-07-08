@@ -189,6 +189,10 @@ def capitalize_tag(tag):
     return u' '.join(word.capitalize() for word in tag.split())
 
 def substitute_words_in_tags(tags, delete_tags=True):
+
+    if not tags: # Nothing to transform
+        return tags
+    
     # Break apart tags into their constituent words
     word_idxs = tags_to_word_idx(tags)
 
