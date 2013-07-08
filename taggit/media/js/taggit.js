@@ -67,10 +67,13 @@
                 content_field = $ul.attr('data-tag-content-field'),
                 self = this,
                 raw_tags = $input.val();
-                
+            
+            // Merge form contents into a string of HTML.
             var raw_contents = content_field.split(',').map(function(cf) {
                 return get_contents_by_name(self, cf); 
             }).join('.\n');
+            // Wrap the whole thing in a div to ensure no free-floating text.
+            var raw_contents = ['<div>', raw_contents, '</div>'].join('');
             
             $.ajax({
                 url: query_url,
