@@ -7,13 +7,13 @@ readme = f.read()
 f.close()
 
 setup(
-    name='django-taggit',
+    name='django-taggit2',
     version=__import__('taggit').__version__,
-    description='django-taggit is a reusable Django application for simple tagging.',
+    description='Reusable tagging with pluggable automatic tag generation',
     long_description=readme,
-    author='Alex Gaynor',
-    author_email='alex.gaynor@gmail.com',
-    url='http://github.com/alex/django-taggit/tree/master',
+    author='The Atlantic',
+    author_email='atmoprogrammers@theatlantic.com',
+    url='http://github.com/theatlantic/django-taggit2/tree/master',
     packages=find_packages(),
     zip_safe=False,
     package_data = {

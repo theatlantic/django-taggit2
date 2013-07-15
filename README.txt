@@ -1,6 +1,17 @@
 django-taggit
 =============
 
+django-taggit2 is a fork of Alex Gaynor's [Django Taggit](http://github.com/alex/django-taggit)
+that plugs into an automatic tagging function. We're using it with [TagSuggestor](github.com/theatlantic/tagsuggestor).
+
+In Django settings, do this:
+
+    TAGGIT_TAG_GENERATE_FUNC = 'my_utils_package.my_tagging_function'
+
+This function should accept the admin forms context as a text block and return a list of tags.
+
+-------
+
 ``django-taggit`` a simpler approach to tagging with Django.  Add ``"taggit"`` to your
 ``INSTALLED_APPS`` then just add a TaggableManager to your model and go::
 
