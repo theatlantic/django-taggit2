@@ -1,8 +1,8 @@
 django-taggit
 =============
 
-django-taggit2 is a fork of Alex Gaynor's [Django Taggit](http://github.com/alex/django-taggit)
-that plugs into an automatic tagging function. We're using it with [TagSuggestor](github.com/theatlantic/tagsuggestor).
+django-taggit2 is a fork of Alex Gaynor's [Django Taggit](https://github.com/alex/django-taggit)
+that plugs into an automatic tagging function. We're using it with [TagSuggestor](https://github.com/theatlantic/tagsuggestor).
 
 In Django settings, do this:
 
