@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse
 class TagBase(models.Model):
     name = models.CharField(verbose_name=_('Name'), max_length=100)
     slug = models.SlugField(verbose_name=_('Slug'), unique=True, max_length=100)
+    ad_alias = models.SlugField(verbose_name="Alias for Advertising", blank=True, default="", max_length=50)
 
     def __unicode__(self):
         return self.name

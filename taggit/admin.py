@@ -14,6 +14,9 @@ class TagAdmin(admin.ModelAdmin):
     ]
     ordering = ['name']
     search_fields = ['name']
+    list_display = ['name', 'ad_alias']
+    list_filter = ['ad_alias',]
+    list_editable = ['ad_alias',]
 
 
 
@@ -57,6 +60,7 @@ class TagTransformAdmin(admin.ModelAdmin):
     model = TagTransform
     order = ('rule',)
     search_fields = ('rule', 'transform',)
+
     list_per_page = 50
     list_display = ('type', 'rule', 'transform')
 
